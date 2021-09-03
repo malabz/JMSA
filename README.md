@@ -7,9 +7,12 @@ usage: java -jar  [-m] mode [-i] path [-o] path
 
   necessary arguments: 
     -i  Input file path (nucleotide sequences in fasta format)
-    -m  two option (1.TreeAlign 2.CenterAlign)
+    -m  three align option (1.Tree 2.Center 3.mix)
+         1. Tree   accurate but slowest
+         2. Center rough but fastest
+         3. Mix    accurate and faster
 
   optional arguments: 
-    -o  Output file path (default: inputfile.aligned)
+    -o  Output file path (default: infile.mode)
 ```
 
