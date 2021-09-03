@@ -85,7 +85,11 @@ public class CenCluster {
     }
 
     private int[] delOutliers(HashMap<Integer, Integer> idxMap, int idxc, int[] clusters) {
-        if (clusters.length <= 2) { return clusters; }
+        if (clusters.length <= 2) {
+            int[] resInt = new int[clusters.length];
+            int i = 0;
+            for (int value : clusters) { resInt[i++] = idxMap.remove(value); }
+            return resInt; }
         FMAlign fmAlign = new FMAlign(strs[idxc].replaceAll("-", ""));
         score sc = new score();
         double[] scores = new double[clusters.length];
