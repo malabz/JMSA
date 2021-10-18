@@ -6,7 +6,7 @@
 ### Usage
 
 ```shell
-usage: java -jar  [-m] mode [-i] path [-o] path
+usage: java -jar jmsa-**.jar  [-m] mode [-i] path [-o] path
 
   necessary arguments: 
     -i  Input file path (nucleotide sequences in fasta format)
