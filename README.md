@@ -1,3 +1,6 @@
+## Multiple Sequence Alignment for DNA/RNA
+
+
 [website](http://lab.malab.cn/~cjt/MSA/soft.html)
 
 ### Usage
@@ -16,3 +19,24 @@ usage: java -jar  [-m] mode [-i] path [-o] path
     -o  Output file path (default: infile.mode)
 ```
 
+### Change Log
+---
+
+- 18-10-2021, version 0.3-alpha
+  
+  add cluster Tree mode, and fix some problem in FM index
+
+- 3-9-2021, version 0.2-alpha
+  
+  fix clustering problems
+
+- 12-5-2021, version 0.1-alpha
+  
+  inital version
+  
+
+### Development Environment
+
+- JDK 1.8
+
+- Intellij IDEA (Maven)
