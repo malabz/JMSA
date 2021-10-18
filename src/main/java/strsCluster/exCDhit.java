@@ -20,7 +20,7 @@ public class exCDhit {
         try (BufferedReader br = new BufferedReader(new FileReader(path))) {
             String temp, target = null;
             List<String> names = new ArrayList<>();
-            Pattern p = Pattern.compile("(\\d+).*(>\\w+).*\\s+(\\*?).*");
+            Pattern p = Pattern.compile("\\d+\\s+\\w+,\\s(>\\s*\\w*).*?\\.{3}\\s(.*)");
             while ((temp = br.readLine()) != null) {
                 if (temp.charAt(0) == '>') {
                     if (target != null) {
@@ -34,8 +34,8 @@ public class exCDhit {
                 else {
                     Matcher m = p.matcher(temp);
                     if (m.matches()) {
-                        if (m.group(3).equals("*")) target = m.group(2);
-                        else names.add(m.group(2));
+                        if (m.group(2).equals("*")) target = m.group(1);
+                        else names.add(m.group(1));
                     }   
                 }
             }
@@ -46,6 +46,6 @@ public class exCDhit {
                 clstrs.add(cone);
             }
         }
-        return clstrs.toArray(String[][]::new);
+        return clstrs.toArray(new String[clstrs.size()][]);
     }
 }

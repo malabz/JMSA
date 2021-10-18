@@ -20,8 +20,15 @@ public class FMAlign extends subStringAlign {
     }
 
     public FMAlign(String A, String B) {
-        this.A = A.toLowerCase();
-        this.B = B.toLowerCase();
+        if (A.length() >= B.length()) {
+            this.A = A.toLowerCase();
+            this.B = B.toLowerCase();
+        }
+        else { 
+            this.A = B.toLowerCase();
+            this.B = A.toLowerCase();
+            this.state = true;
+        }
         this.FMA = new FMIndex(this.A);
         this.Align();
     }
@@ -60,7 +67,7 @@ public class FMAlign extends subStringAlign {
             List<Integer> idxsPre = this.selectprefix(this.B.substring(0, index));
             if (idxsPre.size() > 0) {
                 int length = idxsPre.remove(idxsPre.size() - 1);
-                IdxLen.add(new int[]{index, length});
+                IdxLen.add(new int[]{index-length, length});
                 locx.add(idxsPre);
                 index -= length;
             }
@@ -68,7 +75,7 @@ public class FMAlign extends subStringAlign {
         }
         List<int[]> res = new ArrayList<>();
         
-        if (IdxLen.size() == 0) { return res.toArray(int[][]::new); }
+        if (IdxLen.size() == 0) { return res.toArray(new int[0][]); }
 
         float start = Float.POSITIVE_INFINITY;
         float end = Float.NEGATIVE_INFINITY;
@@ -76,18 +83,18 @@ public class FMAlign extends subStringAlign {
             if (Collections.max(l) > end) { end = Collections.max(l);}
             if (Collections.min(l) < start) { start = Collections.min(l);}
         }
-        int length1 = IdxLen.get(IdxLen.size()-1)[0] + IdxLen.get(IdxLen.size()-1)[1] - IdxLen.get(0)[0];
+        int length1 = IdxLen.get(0)[0] - IdxLen.get(IdxLen.size()-1)[0];
         int length2 = (int) (end - start);
         
         for (int i = locx.size() - 1; i >= 0; i--) {
             if (locx.get(i).size() > 1) {
                 int idx = this.MultiReg(locx.get(i), length2, (float)IdxLen.get(i)[0]/length1);
-                res.add(new int[]{IdxLen.get(i)[0] - IdxLen.get(i)[1], IdxLen.get(i)[1], locx.get(i).get(idx)});
+                res.add(new int[]{IdxLen.get(i)[0], IdxLen.get(i)[1], locx.get(i).get(idx)});
             }
             else {
-                res.add(new int[]{IdxLen.get(i)[0] - IdxLen.get(i)[1], IdxLen.get(i)[1], locx.get(i).get(0)});
+                res.add(new int[]{IdxLen.get(i)[0], IdxLen.get(i)[1], locx.get(i).get(0)});
             }
         }
-        return res.toArray(int[][]::new);
+        return res.toArray(new int[res.size()][]);
     }
 }

@@ -21,8 +21,15 @@ public class STAlign extends subStringAlign{
      * @param B
      */
     public STAlign (String A, String B) {
-        this.A = A.toLowerCase();
-        this.B = B.toLowerCase();
+        if (A.length() >= B.length()) {
+            this.A = A.toLowerCase();
+            this.B = B.toLowerCase();
+        }
+        else { 
+            this.A = B.toLowerCase();
+            this.B = A.toLowerCase();
+            this.state = true;
+        }
         this.STA = new STree(this.A);
         Align();
     }
@@ -43,8 +50,8 @@ public class STAlign extends subStringAlign{
     private void dfsleaves(Node node, List<Integer> results ,int length) {
         Collection<Node> sons = node.children.values();
         for (Node son : sons) {
-            if (son.leaf && STA.edgelength(son) > 1) {
-                results.add(son.start - length);
+            if (son.leaf) {
+                results.add(son.start - length - STA.edgelength(node));
             }
             else {
                 int tmp = length + STA.edgelength(son);
@@ -96,6 +103,7 @@ public class STAlign extends subStringAlign{
             }
 
             if (tag == 1) { break; }
+            if (STA.T.charAt(node.start + step) != s.charAt(step+length)) { break; }
         }
         
         if (node.leaf) {starts.add(node.start - length);}

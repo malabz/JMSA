@@ -73,7 +73,7 @@ public class STree {
                 }
                 int splitEnd = nextNode.start + this.actLength - 1;
                 Node splitNode = this.genNode(nextNode.start, splitEnd, false);
-                this.actNode.children.remove(this.T.charAt(this.actEdge));
+                // this.actNode.children.remove(this.T.charAt(this.actEdge));
                 this.actNode.children.put(this.T.charAt(this.actEdge), splitNode);
                 splitNode.children.put(this.T.charAt(pos), this.genNode(pos, -1, true));
                 nextNode.start += this.actLength;

@@ -7,22 +7,10 @@ import java.util.HashMap;
  * 统计kmer，计算字母表的大小，计算字符之间的距离
  */
 public class kmer {
-    private String[][] strings;
-    private String[] strs;
+    private final String[] strs;
     private final int num, k;
 
     /**
-     * k = 5
-     * @param strings
-     */
-    public kmer(String[][] strings) {
-        this.strings = strings;
-        this.num = strings.length;
-        this.k = 5;
-    }
-
-    /**
-     * @param strs
      * @param k kmer的步长
      */
     public kmer(String[] strs, int k) {
@@ -31,18 +19,9 @@ public class kmer {
         this.num = strs.length;
     }
 
-    /**
-     * k = 4
-     * @param strs
-     */
-    public kmer(String[] strs) {
-        this.k = 4;
-        this.strs = strs;
-        this.num = strs.length;
-    }
 
     /**
-     * the number of al is smaller than 5
+     * the number of alphabet is smaller than 5
      * @return alphabet
      */
     public char[] Counter() {
@@ -91,7 +70,7 @@ public class kmer {
     public int[][] Counterk() {
         HashMap<String, Integer> wordsIdx = new HashMap<>();
         int temp = 0;
-        for (String str :strs) {
+        for (String str : strs) {
             // for (int i = 0; i <= str.length() - this.k; i += this.k) {
             for (int i = 0; i <= str.length() - this.k; i++) {
                 String kstr = str.substring(i, i + this.k);
@@ -112,52 +91,6 @@ public class kmer {
     }
 
     /**
-     * to get the idx matrix of k mer
-     * @return kmer[][]
-     */
-    public int[][] CounterkND() {
-        HashMap<String, Integer> wordsIdx = new HashMap<>();
-        int temp = 0;
-        for (String[] strs :strings) {
-            for (String str : strs) {
-                // for (int i = 0; i <= str.length() - this.k; i += this.k) {
-                for (int i = 0; i <= str.length() - this.k; i++) {
-                    String kstr = str.substring(i, i + this.k);
-                    if (!wordsIdx.containsKey(kstr)) {
-                        wordsIdx.put(kstr, temp++);
-                    }
-                }
-            }
-        }
-        int[][] kmerAll = new int[num][wordsIdx.keySet().size()];
-        for (int i = 0; i < num; i++) {
-            String[] strs = strings[i];
-            for (String str : strs) {
-                // for (int j = 0; j <= str.length() - this.k; j += this.k) {
-                for (int j = 0; j <= str.length() - this.k; j++) {
-                    kmerAll[i][wordsIdx.get(str.substring(j, j + this.k))]++;
-                }
-            }
-        }
-        return kmerAll;
-    }
-
-    /**
-     * compute the distance between the strs
-     * @return distance[][]
-     */
-    public double[][] getDismatrixND() {
-        int[][] kmerAll = CounterkND();
-        double[][] dismatrix = new double[num][num];
-        for (int i = 0; i < num; i++) {
-            for (int j = i + 1; j < num; j++) {
-                dismatrix[i][j] = dismatrix[j][i] = getDistance(kmerAll[i], kmerAll[j]);
-            }
-        }
-        return dismatrix;
-    }
-
-    /**
      * compute the distance between the strs
      * @return distance[][]
      */
@@ -174,7 +107,6 @@ public class kmer {
 
     /**
      * compute the distance one to the other
-     * @param idxc
      * @return distance[][]
      */
     public double[] getDismatrix1D(int idxc) {

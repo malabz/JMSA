@@ -1,42 +1,30 @@
 package msa;
 
+import java.util.HashMap;
 
 import hierCluster.guidetree;
-import java.util.HashMap;
-import psa.multiKband;
+import io.str;
 import measure.*;
+import psa.FastMultiAlign;
 import psa.dsa;
+import psa.multiDP;
+import psa.multiKband;
 
 public class treeAlign {
     private String[] straligned;
     private final String Treemode;
     private int[] orders;
     private final int num;
-    private int kk;
-
-
-    /**
-     * used for cenTree
-     * @param strs
-     * @param straligned
-     */
-    public treeAlign (String[] strs, String[] straligned, String treemode) {
-        this.num = strs.length;
-        this.Treemode = treemode;
-        this.straligned = straligned;
-        ReAlign(strs);
-    }
+    private final int kk;
 
 
     /**
      * Choose one Gen tree mode "nj" or "upgma"
-     * @param strs
      */
     public treeAlign(String[] strs, String treemode) {
         this.num = strs.length;
         this.Treemode = treemode;
-        score sc = new score();
-        kk = sc.getK(strs, false);
+        kk = score.getK(strs, false);
         System.out.println("k:" + kk);
         Align(strs);
         reOrder();
@@ -44,14 +32,11 @@ public class treeAlign {
 
     /**
      * no output (silent)
-     * @param strs
-     * @param silent
      */
     public treeAlign(String[] strs, String treemode, int silent) {
         this.num = strs.length;
         this.Treemode = treemode;
-        score sc = new score();
-        kk = sc.getK(strs, false);
+        kk = score.getK(strs, false);
         AlignSlient(strs);
         reOrder();
     }
@@ -59,9 +44,7 @@ public class treeAlign {
     /**
      * To get the alignment results.
      */
-    public String[] getStrsAlign() {
-        return this.straligned;
-    }
+    public String[] getStrsAlign() { return this.straligned; }
 
     private int[] combineLabels(HashMap<Integer, int[]> labelsList, int l1, int l2) {
         int[] listL1 = l1 < num ? new int[]{l1} : labelsList.get(l1);
@@ -92,13 +75,14 @@ public class treeAlign {
         int[][] treeList = gTree.genTreeList(0);
         HashMap<Integer, String[]> strsList = new HashMap<>();
         HashMap<Integer, int[]> labelsList = new HashMap<>();
+        HashMap<Integer, Integer> lengthList = new HashMap<>();
         long endTime = System.currentTimeMillis();
 
         System.out.println("time: "+((endTime-startTime)/1000)+"s\n");
         System.out.println("Align the seqs along the Tree\n");
         
         startTime = System.currentTimeMillis();
-        kmer km = new kmer(strs);
+        kmer km = new kmer(strs, 4);
         char[] alphabet = km.Counter();
         int len = treeList.length, i = 0;
         for (int[] readyAlign : treeList) {
@@ -106,30 +90,25 @@ public class treeAlign {
             System.out.print(outToScreen);
             String[] strsA, strsB;
             if (readyAlign[0] < this.num && readyAlign[1] < this.num) {
-                System.currentTimeMillis();
-                // TODO to use fmindex
-                dsa pa = new dsa(strs[readyAlign[0]], strs[readyAlign[1]], "suffix");
+                dsa pa = new dsa(strs[readyAlign[0]], strs[readyAlign[1]], "fmindex");
                 String[] strsC = pa.getStrAlign();
                 
                 strsList.put(readyAlign[2], strsC);
-                strsList.remove(readyAlign[0]);
-                strsList.remove(readyAlign[1]);
-                
                 labelsList.put(readyAlign[2], combineLabels(labelsList, readyAlign[0], readyAlign[1]));
-                labelsList.remove(readyAlign[0]);
-                labelsList.remove(readyAlign[1]);
-                System.currentTimeMillis();
+                lengthList.put(readyAlign[2], strs[readyAlign[0]].length() >= strs[readyAlign[1]].length() ? 0 : 1);
 
                 i++;
-                System.out.print("\b".repeat(outToScreen.length()));
+                System.out.print(str.repeat("\b", outToScreen.length()));
                 continue;
             }
+            int idxcA = 0, idxcB = 0;
             if (readyAlign[0] < this.num) {
                 strsA = new String[1];
                 strsA[0] = strs[readyAlign[0]];
             }
             else {
                 strsA = strsList.remove(readyAlign[0]);
+                idxcA = lengthList.remove(readyAlign[0]);
             }
             if (readyAlign[1] < this.num) {
                 strsB = new String[1];
@@ -137,159 +116,111 @@ public class treeAlign {
             }
             else {
                 strsB = strsList.remove(readyAlign[1]);
+                idxcB = lengthList.remove(readyAlign[1]);
             }
-
-            multiKband mkband = new multiKband(strsA, strsB, alphabet, kk);
-            String[] strsC = mkband.getStrsAlign();
-
+            int ln = Math.abs(strsB[0].length() - strsA[0].length());
+            double diff = (double) ln / Math.max(strsB[0].length(), strsA[0].length());
+            String[] strsC;
+            if (diff > 0.4) { 
+                multiDP mkband = new multiDP(strsA, strsB, alphabet);
+                strsC = mkband.getStrsAlign();
+            }
+            else if (diff > 0.1) {
+                multiKband mkband = new multiKband(strsA, strsB, alphabet, kk);
+                strsC = mkband.getStrsAlign();
+            }
+            else {
+                FastMultiAlign mkband = new FastMultiAlign(strsA, strsB, alphabet, kk, idxcA, idxcB);
+                strsC = mkband.getStrsAlign();
+            }
             strsList.put(readyAlign[2], strsC);
             
             labelsList.put(readyAlign[2], combineLabels(labelsList, readyAlign[0], readyAlign[1]));
             labelsList.remove(readyAlign[0]);
             labelsList.remove(readyAlign[1]);
 
+            if (strsA[idxcA].length() >= strsB[idxcB].length()) {
+                lengthList.put(readyAlign[2], idxcA);
+            }
+            else {
+                lengthList.put(readyAlign[2], idxcB + strsA.length);
+            }
+
             i++;
-            System.out.print("\b".repeat(outToScreen.length()));
+            System.out.print(str.repeat("\b", outToScreen.length()));
         }
         endTime = System.currentTimeMillis();
         System.out.println("    " + len + " / " + len + "\n");
         System.out.println("time: "+((endTime-startTime)/1000)+"s\n");
         this.orders = labelsList.get(treeList[treeList.length-1][2]);
         this.straligned = strsList.get(treeList[treeList.length-1][2]);
-        score sc = new score();
-        System.out.println(" sps: " + String.format("%.3f", sc.sps(straligned)));
-        System.out.println("  tc: " + String.format("%.3f", sc.tc(straligned)));
+        // System.out.println(" sps: " + String.format("%.3f", score.sps(straligned)));
+        // System.out.println("  tc: " + String.format("%.3f", score.tc(straligned)));
+        // System.out.println("  tc: " + String.format("%.3f", score.tcStrict(straligned)));
         
     }
 
-
-    /**
-     * TODO
-     * 这个函数是为了之后校正用的，对齐之后还是需要转换顺序的
-     */
-    private void ReAlign(String[] strs) {
-        
-        System.out.println();
-        System.out.println("build the " + Treemode + " Tree");
-        System.out.println();
-
-        long startTime = System.currentTimeMillis();
-        guidetree gTree = new guidetree(this.straligned, 2, Treemode);
-        int[][] treeList = gTree.genTreeList(0);
-        HashMap<Integer, String[]> strsList = new HashMap<>();
-        HashMap<Integer, int[]> labelsList = new HashMap<>();
-        long endTime = System.currentTimeMillis();
-
-        System.out.println("time: "+((endTime-startTime)/1000)+"s\n");
-        System.out.println("Align the seqs along the Tree\n");
-        
-        startTime = System.currentTimeMillis();
-        kmer km = new kmer(strs);
-        char[] alphabet = km.Counter();
-        int len = treeList.length, i = 0;
-        for (int[] readyAlign : treeList) {
-            String outToScreen = "    " + (i + 1) + " / " + len;
-            System.out.print(outToScreen);
-            String[] strsA, strsB;
-            if (readyAlign[0] < this.num && readyAlign[1] < this.num) {
-                System.currentTimeMillis();
-                dsa pa = new dsa(strs[readyAlign[0]], strs[readyAlign[1]], "suffix");
-                String[] strsC = pa.getStrAlign();
-                
-                strsList.put(readyAlign[2], strsC);
-                strsList.remove(readyAlign[0]);
-                strsList.remove(readyAlign[1]);
-                
-                labelsList.put(readyAlign[2], combineLabels(labelsList, readyAlign[0], readyAlign[1]));
-                labelsList.remove(readyAlign[0]);
-                labelsList.remove(readyAlign[1]);
-                System.currentTimeMillis();
-
-                i++;
-                System.out.print("\b".repeat(outToScreen.length()));
-                continue;
-            }
-            if (readyAlign[0] < this.num) {
-                strsA = new String[1];
-                strsA[0] = strs[readyAlign[0]];
-            }
-            else {
-                strsA = strsList.remove(readyAlign[0]);
-            }
-            if (readyAlign[1] < this.num) {
-                strsB = new String[1];
-                strsB[0] = strs[readyAlign[1]];
-            }
-            else {
-                strsB = strsList.remove(readyAlign[1]);
-            }
-
-            multiKband mkband = new multiKband(strsA, strsB, alphabet, kk);
-            String[] strsC = mkband.getStrsAlign();
-
-            strsList.put(readyAlign[2], strsC);
-            
-            labelsList.put(readyAlign[2], combineLabels(labelsList, readyAlign[0], readyAlign[1]));
-            labelsList.remove(readyAlign[0]);
-            labelsList.remove(readyAlign[1]);
-
-            i++;
-            System.out.print("\b".repeat(outToScreen.length()));
-        }
-        endTime = System.currentTimeMillis();
-        System.out.println("    " + len + " / " + len + "\n");
-        System.out.println("\ntime: "+((endTime-startTime)/1000)+"s\n");
-        this.orders = labelsList.get(treeList[treeList.length-1][2]);
-        this.straligned = strsList.get(treeList[treeList.length-1][2]);
-        score sc = new score();
-        System.out.println(" sps: " + String.format("%.3f", sc.sps(straligned)));
-        System.out.println("  tc: " + String.format("%.3f", sc.tc(straligned)));
-    }
 
     private void AlignSlient(String[] strs) {
         guidetree gTree = new guidetree(strs, this.Treemode);
         int[][] treeList = gTree.genTreeList(1);
         HashMap<Integer, String[]> strsList = new HashMap<>();
         HashMap<Integer, int[]> labelsList = new HashMap<>();
-        kmer km = new kmer(strs);
+        HashMap<Integer, Integer> lengthList = new HashMap<>();
+        kmer km = new kmer(strs, 4);
         char[] alphabet = km.Counter();
         for (int[] readyAlign : treeList) {
             String[] strsA, strsB;
             if (readyAlign[0] < this.num && readyAlign[1] < this.num) {
-                System.currentTimeMillis();
-                dsa pa = new dsa(strs[readyAlign[0]], strs[readyAlign[1]], "suffix");
+                dsa pa = new dsa(strs[readyAlign[0]], strs[readyAlign[1]], "fmindex");
                 String[] strsC = pa.getStrAlign();
                 strsList.put(readyAlign[2], strsC);
-                strsList.remove(readyAlign[0]);
-                strsList.remove(readyAlign[1]);
                 labelsList.put(readyAlign[2], combineLabels(labelsList, readyAlign[0], readyAlign[1]));
-                labelsList.remove(readyAlign[0]);
-                labelsList.remove(readyAlign[1]);
-                System.currentTimeMillis();
+                lengthList.put(readyAlign[2], strs[readyAlign[0]].length() >= strs[readyAlign[1]].length() ? 0 : 1);
                 continue;
             }
+            int idxcA = 0, idxcB = 0;
             if (readyAlign[0] < this.num) {
                 strsA = new String[1];
                 strsA[0] = strs[readyAlign[0]];
             }
             else {
-                strsA = strsList.get(readyAlign[0]);
+                strsA = strsList.remove(readyAlign[0]);
+                idxcA = lengthList.remove(readyAlign[0]);
             }
             if (readyAlign[1] < this.num) {
                 strsB = new String[1];
                 strsB[0] = strs[readyAlign[1]];
             }
             else {
-                strsB = strsList.get(readyAlign[1]);
+                strsB = strsList.remove(readyAlign[1]);
+                idxcB = lengthList.remove(readyAlign[1]);
             }
-            multiKband mkband = new multiKband(strsA, strsB, alphabet, kk);
-            String[] strsC = mkband.getStrsAlign();
+            int ln = Math.abs(strsB[0].length() - strsA[0].length());
+            double diff = (double) ln / Math.max(strsB[0].length(), strsA[0].length());
+            String[] strsC;
+            if (diff > 0.4) { 
+                multiDP mkband = new multiDP(strsA, strsB, alphabet);
+                strsC = mkband.getStrsAlign();
+            }
+            else if (diff > 0.1) {
+                multiKband mkband = new multiKband(strsA, strsB, alphabet, kk);
+                strsC = mkband.getStrsAlign();
+            }
+            else {
+                FastMultiAlign mkband = new FastMultiAlign(strsA, strsB, alphabet, kk, idxcA, idxcB);
+                strsC = mkband.getStrsAlign();
+            }
             strsList.put(readyAlign[2], strsC);
-            strsList.remove(readyAlign[0]);
-            strsList.remove(readyAlign[1]);
             labelsList.put(readyAlign[2], combineLabels(labelsList, readyAlign[0], readyAlign[1]));
             labelsList.remove(readyAlign[0]);
             labelsList.remove(readyAlign[1]);
+            if (strsA[idxcA].length() >= strsB[idxcB].length()) {
+                lengthList.put(readyAlign[2], idxcA);
+            }
+            else {
+                lengthList.put(readyAlign[2], idxcB+strsA.length);
+            }
         }
         this.orders = labelsList.get(treeList[treeList.length-1][2]);
         this.straligned = strsList.get(treeList[treeList.length-1][2]);

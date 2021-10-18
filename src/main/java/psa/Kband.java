@@ -1,6 +1,8 @@
 package psa;
 
-/** 
+import io.str;
+
+/**
  * Pair sequence alignment (PSA) 
  * Affine gap penalty + Kband
  * 
@@ -86,8 +88,7 @@ public class Kband extends kb {
                 j++;
             }
             else {
-                System.out.println("(Kband) Trace Back is wrong!");
-                System.exit(0);
+                throw new IllegalStateException("channel = " + channel);
             }
         }
 
@@ -107,12 +108,12 @@ public class Kband extends kb {
         // len(A)=0 or len(B)=0
         if (m == 0 && 0 == n) { return; }
         else if (m == 0) {
-            this.alignA = "-".repeat(n);
+            this.alignA = str.repeat("-", n);
             this.alignB = this.B;
             return;
         }
         else if (n == 0) {
-            this.alignB = "-".repeat(m);
+            this.alignB = str.repeat("-", m);
             this.alignA = this.A;
             return;
         }

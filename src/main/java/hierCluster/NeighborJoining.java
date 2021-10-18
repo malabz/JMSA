@@ -1,5 +1,7 @@
 package hierCluster;
 
+import io.str;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,8 +65,7 @@ public class NeighborJoining {
      */
     public midnode genTree() {
         if (this.n < 2) {
-            System.out.println("The number of types is smaller than 2!");
-            System.exit(0);
+            throw new IllegalArgumentException("The number of strings is smaller than 2!");
         }
         int tempN = this.n;
         while (this.n > 2) {
@@ -131,7 +132,7 @@ public class NeighborJoining {
             // renew n
             this.n--;
 
-            System.out.print("\b".repeat(outToScreen.length()));
+            System.out.print(str.repeat("\b", outToScreen.length()));
         }
         System.out.println("    " + (tempN - n + 1) + " / " + (tempN - 1) + "\n");
         midnode temp = new midnode(this.nodes[0], this.nodes[1], this.global_n);
@@ -149,8 +150,7 @@ public class NeighborJoining {
      */
     public midnode genTreeSilent() {
         if (this.n < 2) {
-            System.out.println("The number of types is smaller than 2!");
-            System.exit(0);
+            throw new IllegalArgumentException("The number of strings is smaller than 2!");
         }
         while (this.n > 2) {
             // 1. gen the Q-matrix

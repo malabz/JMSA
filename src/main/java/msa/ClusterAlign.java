@@ -6,14 +6,16 @@ import java.util.regex.Pattern;
 import java.util.HashMap;
 
 import hierCluster.guidetree;
-// import io.fasta;
+import io.str;
+import psa.FastMultiAlign;
 import psa.dsa;
+import psa.multiDP;
 import psa.multiKband;
 import strsCluster.*;
 import measure.*;
 
 public class ClusterAlign {
-    private int kk;
+    private final int kk, numsStrs;
     private int[] order;
     private final char[] alphabet;
     private String[] labels;
@@ -21,31 +23,30 @@ public class ClusterAlign {
     private HashMap<Integer, int[]> cluIdx;
     // mode1 "c" or "t" mode2 "c" or "t"
     private String mode1 = "t";
-    private String mode2 = "t";
+    private String mode2 = "t2";
 
     public String[] getStrsAlign() {
         reOrder();
         return strsAligned;
     }
 
-    public ClusterAlign (String[] strs){
-        score sc = new score();
-        kk = sc.getK(strs, false);
-        kmer km = new kmer(strs);
+    public ClusterAlign (String[] strs, boolean iter){
+        numsStrs = strs.length;
+        kk = score.getK(strs, false);
+        kmer km = new kmer(strs, 4);
         alphabet = km.Counter();
         strsAligned = new String[strs.length];
-        multiAlign(cluAlign(getCluster(strs)));
+        multiAlign(cluAlign(getCluster(strs, iter)));
         // new reAlign(strsAligned);
     }
 
     /**
-     * get cluster from cdhitfile
-     * @param strs
-     * @param labels
-     * @param cdhitfile
+     * get cluster from cdhitfilew
      */
     public ClusterAlign (String[] strs, String[] labels, String cdhitfile) throws IOException {
-        kmer km = new kmer(strs);
+        numsStrs = strs.length;
+        kk = score.getK(strs, false);
+        kmer km = new kmer(strs, 4);
         alphabet = km.Counter();
         strsAligned = new String[strs.length];
         this.labels = labels;
@@ -66,13 +67,14 @@ public class ClusterAlign {
 
     /**
      * gen the cluster by own
-     * @return
      */
-    private HashMap<Integer, String[]> getCluster (String[] strs) {
+    private HashMap<Integer, String[]> getCluster (String[] strs, boolean iter) {
         long startTime = System.currentTimeMillis();
         System.out.print("\nTo cluster ... ");
-        CenCluster cster = new CenCluster(strs, 0.9);
-        cluIdx = cster.getClusters();
+        // CenCluster cster = new CenCluster(strs, 0.85, iter);
+        // cluIdx = cster.getClusters();
+        FastCluster fastCluster = new FastCluster(strs, 0.85);
+        cluIdx = fastCluster.getClusters();
         HashMap<Integer, String[]> multiStrs = new HashMap<>();
         for (int c : cluIdx.keySet()) {
             int[] newOne = new int[cluIdx.get(c).length + 1];
@@ -93,9 +95,6 @@ public class ClusterAlign {
 
     /**
      * get cluster strings [][] by cdhitdfile
-     * @param cdhitfile
-     * @return
-     * @throws IOException
      */
     private HashMap<Integer, String[]> getCluCdhit (String[] strs, String cdhitfile) throws IOException {
         exCDhit cdhit = new exCDhit();
@@ -103,7 +102,7 @@ public class ClusterAlign {
         HashMap<String, Integer> idxmap = new HashMap<>();
         HashMap<Integer, String[]> multiStrs = new HashMap<>();
         cluIdx = new HashMap<>();
-        Pattern p = Pattern.compile("(\\D\\w+).*");
+        Pattern p = Pattern.compile("(>\\s*\\w+).*");
         for (int i = 0; i < labels.length; i++) {
             Matcher m = p.matcher(labels[i]);
             if (m.matches()) idxmap.put(m.group(1), i);
@@ -124,7 +123,14 @@ public class ClusterAlign {
 
 
     private HashMap<Integer, String[]> cluAlign (HashMap<Integer, String[]> multiStrs) {
-        if (multiStrs.size() == 1) { mode1 = "c"; }
+        if (multiStrs.size() <= 1) {
+            int length = 0;
+            for (int c : multiStrs.keySet()) {
+                length = multiStrs.get(c).length;
+            }
+            if (length <= 3000) { mode1 = "t"; }
+            else { mode1 = "c"; }
+        }
         int i = 1;
         System.out.println("To align the cluster\n");
         long startTime = System.currentTimeMillis();
@@ -136,10 +142,10 @@ public class ClusterAlign {
                 multiStrs.put(c, da.getStrAlign());
             }
             else if (multiStrs.get(c).length < 2) {
-                System.out.print("\b".repeat(outToScreen.length()));
+                System.out.print(str.repeat("\b", outToScreen.length()));
                 continue;
             }
-            else if (mode1.equals("c")) {
+            else if (mode1.equals("c") || multiStrs.get(c).length >= 3000) {
                 centerAlign cAlign = new centerAlign(multiStrs.get(c), 1);
                 multiStrs.put(c, cAlign.getStrsAlign());
             }
@@ -147,15 +153,17 @@ public class ClusterAlign {
                 treeAlign tAlign = new treeAlign(multiStrs.get(c), "upgma", 1);
                 multiStrs.put(c, tAlign.getStrsAlign());
             }
-            // fasta ft = new fasta();
+            else {
+                throw new IllegalArgumentException("Unknown mode " + mode1);
+            }
+            // Fasta ft = new Fasta();
             // String[] lables = new String[multiStrs.get(c).length];
             // try {
-            //     ft.writeFasta(multiStrs.get(c), lables, "/home/kun/Documents/mywork/msa/code/" + c + ".cluster");
+            //     ft.writeFasta(multiStrs.get(c), lables, "/home/kun/Documents/mywork/msa/" + c + ".cluster");
             // } catch (IOException e) {
-            //     // TODO Auto-generated catch block
             //     e.printStackTrace();
             // }
-            System.out.print("\b".repeat(outToScreen.length()));
+            System.out.print(str.repeat("\b", outToScreen.length()));
         }
         long endTime = System.currentTimeMillis();
         System.out.println("time : " + (endTime - startTime)/1000 + "s             \n");
@@ -164,28 +172,66 @@ public class ClusterAlign {
 
 
     private void multiAlign (HashMap<Integer, String[]> multiStrsed) {
-        if (mode2.equals("c")) {
-            // cenAlign1(multiStrsed);
-            cenAlign2(multiStrsed);
-        }
-        else if (mode2.equals("t")) {
-            TreeAlign2(multiStrsed);
+        if (numsStrs > 30000) { mode2 = "t1"; }
+        switch (mode2) {
+            case "t1" :
+                TreeAlign1(multiStrsed);
+                break;
+            case "t2" :
+                TreeAlign2(multiStrsed);
+                break;
+            default :
+                throw new IllegalArgumentException("Unknown mode " + mode2);
         }
     }
 
     /**
-     * 顺序的树比对
+     * 类中取1，再来比对
      */
     public void TreeAlign1(HashMap<Integer, String[]> multiStrs) {
-
+        System.out.println("To combine the cluster");
+        if (multiStrs.size() < 2) {
+            for (int i : multiStrs.keySet()) {
+                strsAligned = multiStrs.get(i);
+                order = cluIdx.get(i);
+            }
+        }
+        else {
+            // cluIdx 索引映射 cluIdx [centerIdxc, ...] N + 1
+            // multiStrs 类的字符串映射
+            String[] centerStrs = new String[multiStrs.size()];
+            int[] keys = new int[multiStrs.size()];
+            int i = 0;
+            for (int key : multiStrs.keySet()) {
+                centerStrs[i] = PickRealOne(multiStrs.get(key));
+                keys[i++] = key;
+            }
+            treeAlign tAlign = new treeAlign(centerStrs, "upgma", 1);
+            centerStrs = tAlign.getStrsAlign();
+            for (i = 0; i < centerStrs.length; i++) {
+                insertGapStrings(centerStrs[i], multiStrs.get(keys[i]));
+            }
+            order = new int[numsStrs];
+            i = 0;
+            for (int key : keys) {
+                int len = cluIdx.get(key).length;
+                System.arraycopy(cluIdx.remove(key), 0, order, i, len);
+                System.arraycopy(multiStrs.remove(key), 0, strsAligned, i, len);
+                i += len;
+            }
+        }
+        // System.out.println(" sps: " + String.format("%.3f", score.sps(strsAligned)));
+        // System.out.println("  tc: " + String.format("%.3f", score.tc(strsAligned)));
+        // System.out.println("  tc: " + String.format("%.3f", score.tcStrict(strsAligned)));
     }
 
     /**
      * 生成一颗中心序列的树，再来树比对
-     * 1. 既然是多序列的那就生成多序列的树来做！
      */
     private void TreeAlign2(HashMap<Integer, String[]> multiStrs) {
         System.out.println("To combine the cluster\n");
+        long startTime = System.currentTimeMillis();
+        long time = 0;
         if (multiStrs.size() < 2) {
             for (int i : multiStrs.keySet()) {
                 strsAligned = multiStrs.get(i);
@@ -197,7 +243,10 @@ public class ClusterAlign {
             HashMap<Integer, Integer> idxmap = new HashMap<>();
             HashMap<Integer, String[]> NewStrsed = new HashMap<>();
             int[][] treeList = GenList(multiStrs, idxmap);
+            int i = 0;
             for (int[] readyAlign : treeList) {
+                String outToScreen = "    " + (i++) + " / " + treeList.length;
+                System.out.print(outToScreen);
                 String[] strsA, strsB;
                 int[] IdxA, IdxB, IdxC;
                 if (readyAlign[0] < idxmap.size()) {
@@ -216,178 +265,76 @@ public class ClusterAlign {
                     strsB = NewStrsed.remove(readyAlign[1]);
                     IdxB = newcluIdx.remove(readyAlign[1]);
                 }
-
-                multiKband mkband = new multiKband(strsA, strsB, alphabet, kk);
-                NewStrsed.put(readyAlign[2], mkband.getStrsAlign());
+                int ln = Math.abs(strsB[0].length() - strsA[0].length());
+                double diff = (double) ln / Math.max(strsB[0].length(), strsA[0].length());
+                if (diff > 0.4) {
+                    multiDP mkband = new multiDP(strsA, strsB, alphabet);
+                    NewStrsed.put(readyAlign[2], mkband.getStrsAlign());
+                }
+                else if (diff > 0.1) {
+                    long startTime1 = System.currentTimeMillis();
+                    multiKband mkband = new multiKband(strsA, strsB, alphabet, kk);
+                    NewStrsed.put(readyAlign[2], mkband.getStrsAlign());
+                    long endTime1 = System.currentTimeMillis();
+                    time += endTime1 - startTime1;
+                }
+                else {
+                    FastMultiAlign mkband = new FastMultiAlign(strsA, strsB, alphabet, kk, 0, 0);
+                    NewStrsed.put(readyAlign[2], mkband.getStrsAlign());
+                }
                 IdxC = new int[IdxA.length + IdxB.length];
                 System.arraycopy(IdxA, 0, IdxC, 0, IdxA.length);
                 System.arraycopy(IdxB, 0, IdxC, IdxA.length, IdxB.length);
                 newcluIdx.put(readyAlign[2], IdxC);
-                
-                // fasta ft = new fasta();
-                // String[] lables = new String[NewStrsed.get(readyAlign[2]).length];
-                // try {
-                //     ft.writeFasta(NewStrsed.get(readyAlign[2]), lables, "/home/kun/Documents/mywork/msa/code/" + readyAlign[2] + ".group");
-                // } catch (IOException e) {
-                //     // TODO Auto-generated catch block
-                //     e.printStackTrace();
-                // }
 
+                System.out.print(str.repeat("\b", outToScreen.length()));
             }
             strsAligned = NewStrsed.get(treeList[treeList.length-1][2]);
             order = newcluIdx.get(treeList[treeList.length-1][2]);
         }
-        score sc = new score();
-        System.out.println(" sps: " + String.format("%.3f", sc.sps(strsAligned)));
-        System.out.println("  tc: " + String.format("%.3f", sc.tc(strsAligned)));
+        long endTime = System.currentTimeMillis();
+        System.out.println("time : " + (endTime - startTime)/1000 + "s             \n");
+        System.out.println("time : " + (time)/1000 + "s             \n");
+        // System.out.println(" sps: " + String.format("%.3f", score.sps(strsAligned)));
+        // System.out.println("  tc: " + String.format("%.3f", score.tc(strsAligned)));
+        // System.out.println("  tc: " + String.format("%.3f", score.tcStrict(strsAligned)));
     }
 
 
     private int[][] GenList(HashMap<Integer, String[]> multiStrs, HashMap<Integer, Integer> idxMap) {
-        String[][] strings = new String[multiStrs.size()][];
+        String[] strs = new String[multiStrs.size()];
         int tempIdx = 0;
         for (int key : multiStrs.keySet()) {
-            strings[tempIdx] = multiStrs.get(key);
+            strs[tempIdx] = multiStrs.get(key)[0];
             idxMap.put(tempIdx++, key);
         }
-        guidetree gTree = new guidetree(strings, "upgma");
-        return gTree.genTreeListND();
+        guidetree gTree = new guidetree(strs, "upgma");
+        return gTree.genTreeList(1);
     }
 
-    /**
-     * 中心比对1
-     */
-    public void cenAlign1(HashMap<Integer, String[]> multiStrs) {
-        HashMap<Integer, Integer> idxName = new HashMap<>();
-        String[] cenStrs = new String[multiStrs.size()];
-        int tempi = 0;
-        for (int key : multiStrs.keySet()) {
-            cenStrs[tempi] = PickRealOne(multiStrs.get(key));
-            idxName.put(tempi++, key);
-        }
-        
-        String[] cenStrsed = new String[cenStrs.length];
-        
-        if (cenStrs.length > 2) {
-            // TODO : choose 1
-            centerAlign cAlign = new centerAlign(cenStrs, 1);
-            cenStrsed = cAlign.getStrsAlign();
-            // treeAlign tAlign = new treeAlign(cenStrs, 1);
-            // cenStrsed = tAlign.getStrsAlign();
-        }
-        else if (cenStrs.length > 1) {
-            multiKband mKband = new multiKband(multiStrs.get(0), multiStrs.get(1), alphabet, kk);
-            strsAligned = mKband.getStrsAlign();
-        }
-        else {
-            strsAligned = multiStrs.get(0);
-        }
-        
-        for (int i = 0; i < cenStrs.length; i++) {
-            int j = 0, counter = 0;
-            int[] marks = new int[cenStrs[i].length() + 1];
-            char[] tempc = cenStrsed[i].toCharArray();
-            for (char c : tempc) {
-                if (c == '-') counter++;
-                else { marks[j++] = counter; counter = 0; }
-            }
-            marks[j] = counter;
-            int idxD = 0;
-            for (String str : multiStrs.get(idxName.get(i))) {
-                strsAligned[cluIdx.get(idxName.get(i))[idxD++]] = insertGap(marks, str);
+
+    private void insertGapStrings(String str, String[] strings) {
+        int[] mark = new int[strings[0].length() + 1];
+        int i = 0, nums = 0;
+        for (char c : str.toCharArray()) {
+            if (c == '-') nums++;
+            else {
+                mark[i++] = nums;
+                nums = 0;
             }
         }
-        score sc = new score();
-        System.out.println(" sps: " + String.format("%.3f", sc.sps(strsAligned)));
-        System.out.println("  tc: " + String.format("%.3f", sc.tc(strsAligned)));
+        mark[i] = nums;
+        for (i = 0; i < strings.length; i++) {
+            strings[i] = insertGap(mark, strings[i]);
+        }
     }
-
-    /**
-     * 中心比对2
-     */
-    public void cenAlign2 (HashMap<Integer, String[]> multiStrs) {
-        int idxc = -1, length = 0;
-        // 给每个组加上了一个guawazi,所以之后要去除掉瓜娃子，crazy
-        for (int key : multiStrs.keySet()) {
-            idxc = multiStrs.get(key)[0].length() > length ? key : idxc;
-            length = Math.max(multiStrs.get(key)[0].length(), length);
-            String[] newGUAWAZI = new String[multiStrs.get(key).length + 1];
-            newGUAWAZI[0] = PickRealOne(multiStrs.get(key));
-            System.arraycopy(multiStrs.get(key), 0, newGUAWAZI, 1, newGUAWAZI.length - 1);
-            multiStrs.put(key, newGUAWAZI);
-        }
-        String[][] newStrsed = new String[multiStrs.size() - 1][2];
-        HashMap<Integer, Integer> idxName = new HashMap<>();
-        int tempi = 0;
-        for (int key : multiStrs.keySet()) {
-            if (key == idxc) continue; 
-            multiKband mKband = new multiKband(multiStrs.get(idxc), multiStrs.get(key), alphabet, true);
-            newStrsed[tempi][0] = mKband.getStrAlign()[0][0];
-            newStrsed[tempi][1] = mKband.getStrAlign()[1][0];
-            idxName.put(key, tempi++);
-            
-        }
-        String centerSeqs = multiStrs.get(idxc)[0];
-        int[] markInsertion = new int[centerSeqs.length() + 1];
-        for (String[] strs2 : newStrsed) {
-            int i = 0, counter = 0;
-            for (char c : strs2[0].toCharArray()) {
-                if (c == '-') counter++;
-                else {
-                    markInsertion[i] = Math.max(markInsertion[i], counter);
-                    counter = 0;
-                    i++;
-                }
-            }
-            markInsertion[i] = Math.max(markInsertion[i], counter);
-        }
-        for (int i = 1; i < multiStrs.get(idxc).length; i++) {
-            strsAligned[cluIdx.get(idxc)[i - 1]] = insertGap(markInsertion, multiStrs.get(idxc)[i]);
-        }
-        for (int key : multiStrs.keySet()) {
-            if (key == idxc) continue;
-
-            char[] tempA = multiStrs.get(key)[0].toCharArray();
-            char[] tempB = newStrsed[idxName.get(key)][0].toCharArray();
-            int[] mark1 = new int[tempA.length + 1];
-            int[] mark2 = new int[tempB.length + 1];
-
-            int i = 0, counter = 0;
-            for (char c : newStrsed[idxName.get(key)][1].toCharArray()) {
-                if (c == '-') counter++;
-                else {
-                    mark1[i] = Math.max(mark1[i], counter);
-                    counter = 0;
-                    i++;
-                }
-            }
-            mark1[i] = Math.max(mark1[i], counter);
-            
-            int pi = 0, pj = 0, total = 0;
-            for (char c : tempB) {
-                if (c == '-') total++;
-                else {
-                    mark2[pi++] = markInsertion[pj++] - total;
-                    while (total != 0) { pi++; total--; }
-                }
-            }
-            mark2[pi] = markInsertion[pj] - total;
-            for (i = 1; i < multiStrs.get(key).length; i++) {
-                strsAligned[cluIdx.get(key)[i - 1]] =  insertGap(mark2, insertGap(mark1, multiStrs.get(key)[i]));
-            }
-        }
-        score sc = new score();
-        System.out.println(" sps: " + String.format("%.3f", sc.sps(strsAligned)));
-        System.out.println("  tc: " + String.format("%.3f", sc.tc(strsAligned)));
-    }
-
 
     private String insertGap(int[] mark, String seq) {
         assert mark.length == seq.length() + 1;
         StringBuilder seqGap = new StringBuilder();
         int len = mark.length;
         for (int i = 0; i < len; i++) {
-            seqGap.append("-".repeat(mark[i]));
+            seqGap.append(str.repeat("-", mark[i]));
             if (i < len - 1) seqGap.append(seq.charAt(i));
         }
         return seqGap.toString();

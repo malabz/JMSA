@@ -6,7 +6,12 @@ import psa.STAlign;
 /**
  * 计算序列间的最长公共子序列的距离
  */
-public record lcs(String[] strs) {
+public class lcs {
+    String[] strs;
+
+    public lcs (String[] strs) {
+        this.strs = strs;
+    }
 
     /**
      * 计算序列间两两之间的距离
@@ -24,8 +29,6 @@ public record lcs(String[] strs) {
 
     /**
      * 计算中心序列与其他序列之间的距离
-     *
-     * @param idxc
      */
     public double[] getDismatrix1D(int idxc) {
         double[] dismatrix = new double[strs.length - 1];

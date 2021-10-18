@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import io.str;
 import measure.score;
 import psa.STAlign;
 
@@ -39,7 +40,7 @@ public class reAlign {
             }
             centerAlign cAlign = new centerAlign(rdStrs, 1);
             subStrsed[idxi++] = cAlign.getStrsAlign();
-            System.out.print("\b".repeat(scren.length()));
+            System.out.print(str.repeat("\b", scren.length()));
         }
         System.out.println();
         System.out.println("\ncombine the results");
@@ -60,12 +61,11 @@ public class reAlign {
                 strsed.append(strsaligned[i].substring(idxi));
             }
             strsaligned[i] = strsed.toString();
-            System.out.print("\b".repeat(scren.length()));
+            System.out.print(str.repeat("\b", scren.length()));
         }
         System.out.println("\n");
-        score sc = new score();
-        System.out.println(" sps: " + String.format("%.3f", sc.sps(strsaligned)));
-        System.out.println("  tc: " + String.format("%.3f", sc.tc(strsaligned)));
+        System.out.println(" sps: " + String.format("%.3f", score.sps(strsaligned)));
+        System.out.println("  tc: " + String.format("%.3f", score.tc(strsaligned)));
     }
 
     public void rrAlign () {
@@ -89,7 +89,7 @@ public class reAlign {
             }
             centerAlign cAlign = new centerAlign(rdStrs, 1);
             subStrsed[idxi++] = cAlign.getStrsAlign();
-            System.out.print("\b".repeat(scren.length()));
+            System.out.print(str.repeat("\b", scren.length()));
         }
         System.out.println();
         System.out.println("combine the results");
@@ -110,12 +110,11 @@ public class reAlign {
                 strsed.append(strsaligned[i].substring(idxi));
             }
             strsaligned[i] = strsed.toString();
-            System.out.print("\b".repeat(scren.length()));
+            System.out.print(str.repeat("\b", scren.length()));
         }
         System.out.println();
-        score sc = new score();
-        System.out.println(" sps: " + String.format("%.3f", sc.sps(strsaligned)));
-        System.out.println("  tc: " + String.format("%.3f", sc.tc(strsaligned)));
+        System.out.println(" sps: " + String.format("%.3f", score.sps(strsaligned)));
+        System.out.println("  tc: " + String.format("%.3f", score.tc(strsaligned)));
     }
 
     public void rreAlign(String[] strs) {
@@ -124,8 +123,7 @@ public class reAlign {
         // char[] alphabet = km.Counter();
         int round = 0;
         // int dxiA = -1, dxiB = -1;
-        score sc = new score();
-        double s1 = sc.tc(strsaligned);
+        double s1 = score.tc(strsaligned);
         while ( record.length > 1 && round < record.length) {
             for (int[] r : record) {
                 System.out.println(r[0] + " " + r[1]);
@@ -142,8 +140,8 @@ public class reAlign {
                         // if (strs[i].length() > lenB) dxiB = i;
                     }
                 }
-                String[] strPart1 = Part1.toArray(String[]::new);
-                String[] strPart2 = Part2.toArray(String[]::new);
+                String[] strPart1 = Part1.toArray(new String[Part1.size()]);
+                String[] strPart2 = Part2.toArray(new String[Part1.size()]);
 
                 delGapStrings(strPart1);
                 // centerAlign cAlign1 = new centerAlign(strPart1);
@@ -180,7 +178,7 @@ public class reAlign {
                 }
 
                 // multiKband mKband = new multiKband(strPart1, strPart2, alphabet);
-                double s2 = sc.tc(nnnstrs);
+                double s2 = score.tc(nnnstrs);
                 // double s2 = sc.tc(mKband.getStrsAlign());
                 float l1 = strsaligned[0].length();
                 // float l2 = mKband.getStrsAlign()[0].length();
@@ -202,7 +200,7 @@ public class reAlign {
         StringBuilder seqGap = new StringBuilder();
         int len = mark.length;
         for (int i = 0; i < len; i++) {
-            seqGap.append("-".repeat(mark[i]));
+            seqGap.append(str.repeat("-", mark[i]));
             if (i < len - 1) seqGap.append(seq.charAt(i));
         }
         return seqGap.toString();
@@ -276,6 +274,6 @@ public class reAlign {
         if (start != end) {
             record.add(new int[]{start, end});
         }
-        return record.toArray(int[][]::new);
+        return record.toArray(new int[record.size()][]);
     }
 }

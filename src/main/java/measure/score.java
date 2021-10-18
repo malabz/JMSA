@@ -2,32 +2,33 @@ package measure;
 
 import java.util.HashMap;
 
+import io.str;
 import msa.centerAlign;
 import sample.sampleStrings;
 
 public class score {
 
-    private final int ms = 7, mis = -3;
-    private final int d = 13, e = 2;
+    private final static int ms = 7, mis = -3;
+    private final static int d = 13, e = 2;
 
     
-    public double sp(String A, String B) {
+    public static double sp(String A, String B) {
         int gap = 0;
-        boolean stat = false;
+        boolean state = false;
         long score = 0;
         assert A.length() == B.length();
         for (int i = 0; i < A.length(); i++) {
             if (A.charAt(i) == B.charAt(i)) {
                 if (A.charAt(i) == '-') gap++;
-                else { score += ms; stat = false;}
+                else { score += ms; state = false;}
             }
             else if(A.charAt(i) == '-' || B.charAt(i) == '-') {
-                score -= stat ? e : d;
-                stat = true;
+                score -= state ? e : d;
+                state = true;
             }
             else {
                 score += mis;
-                stat = false;
+                state = false;
             }
         }
         return (double) score/((A.length() - gap) * ms);
@@ -35,9 +36,8 @@ public class score {
 
     /**
      * used to get the 2D distance matrix
-     * @param strsed
      */
-    public double[][] getDist(String[] strsed) {
+    public static double[][] getDist(String[] strsed) {
         double[][] dis = new double[strsed.length][strsed.length];
         for (int i = 0; i < strsed.length; i++) {
             for (int j = i + 1; j < strsed.length; j++) {
@@ -52,7 +52,7 @@ public class score {
      * @param strs
      * @return score
      */
-    public double sps(String[] strs) {
+    public static double sps(String[] strs) {
         long nums = strs.length, len = strs[0].length();
         double match = 0, gap = 0;
         for (int i = 0; i < len; i++) {
@@ -73,21 +73,21 @@ public class score {
             tempgap += (numg * (numg - 1) / 2);
             match += ((double) tempmatch / (double) (nums * (nums - 1) / 2));
             gap += ((double) tempgap / (double) (nums * (nums - 1) / 2));
-            System.out.print("\b".repeat(scren.length()));
+            System.out.print(str.repeat("\b", scren.length()));
         }
-        System.out.print("match:" + String.format("%.2f", match) + " ");
-        System.out.print("gap:" + String.format("%.2f", gap) + " ");
+        System.out.print("match:" + String.format("%.0f", match) + " ");
+        System.out.print("gap:" + String.format("%.0f", gap) + " ");
         System.out.print("len:" + len + "\n");
-        return match /(len - gap);
+        return match / len;
     }
 
 
     /**
-     * compute the tc score in [0,1]
+     * compute the tc score in [0,1] (0.8)
      * @param strs
      * @return
      */
-    public double tc(String[] strs) {
+    public static double tc(String[] strs) {
         int nums = strs.length;
         int len = strs[0].length();
         int match = 0;
@@ -101,13 +101,13 @@ public class score {
                 else charIdx.put(c, 1);
             }
             if ( charIdx.containsKey('-') && ((double) charIdx.get('-') / nums) > 0.6) {
-                System.out.print("\b".repeat(scren.length()));
+                System.out.print(str.repeat("\b", scren.length()));
                 continue;
             }
             charIdx.remove('-');
             if (charIdx.size() == 1) { 
-                match++; 
-                System.out.print("\b".repeat(scren.length()));
+                match++;
+                System.out.print(str.repeat("\b", scren.length()));
                 continue; 
             }
             int all = 0, max = 0;
@@ -116,7 +116,28 @@ public class score {
                 all += value;
             }
             if ((double) max / all > 0.8) match++;
-            System.out.print("\b".repeat(scren.length()));
+            System.out.print(str.repeat("\b", scren.length()));
+        }
+        return (double) match / len;
+    }
+
+
+    public static double tcStrict(String[] strs) {
+        int len = strs[0].length();
+        int match = 0;
+        for (int i = 0; i < len; i++) {
+            String scren = (i + 1) + "/" + len;
+            System.out.print(scren);
+            HashMap<Character, Integer> charIdx = new HashMap<>();
+            for (String str : strs) {
+                char c = str.charAt(i);
+                if (charIdx.containsKey(c)) charIdx.put(c, charIdx.get(c) + 1);
+                else if (charIdx.size() > 2) break;
+                else charIdx.put(c, 1);
+            }
+            charIdx.remove('-');
+            if (charIdx.size() == 1) match++;
+            System.out.print(str.repeat("\b", scren.length()));
         }
         return (double) match / len;
     }
@@ -128,7 +149,7 @@ public class score {
      * @param sampled
      * @return k
      */
-    public int getK(String[] strs, boolean sampled) {
+    public static int getK(String[] strs, boolean sampled) {
         if (!sampled) {
             sampleStrings spStrs = new sampleStrings();
             strs = spStrs.getSampleStrs(strs);    
@@ -136,24 +157,9 @@ public class score {
         centerAlign cAlign = new centerAlign(strs, 1);
         strs = cAlign.getStrsAlign();
         int nums = strs.length;
-        // int len = strs[0].length();
-        // int gap1 = 0, gap2 = 0;
         int gap2 = 0;
-        // method 1: compute the whole gap
-        // for (int i = 0; i < len; i++) {
-        //     int numsGap = 0;
-        //     for (String str : strs) {
-        //         if (str.charAt(i) == '-') numsGap++;
-        //     }
-        //     if ((float) numsGap / nums > 0.5) gap1++;
-        // }
-        // method 2: compute the longest string's gap
-        // int longRow = cAlign.getLongestRow();
-        // gap += strs[longRow].length() -  strs[longRow].replaceAll("-", "").length();
-        // method 3: 
         for (int i = 0; i < nums; i++) {
             for (int j = i; j < nums; j++) {
-                // gap2 = Math.max(countGap(strs[i], strs[j]), gap2);
                 gap2 += countGap(strs[i], strs[j]);
             }
         }
@@ -161,14 +167,16 @@ public class score {
         return Math.max(gap2, 1);
     }
 
-    private int countGap(String A, String B) {
+    private static int countGap(String A, String B) {
         assert A.length() == B.length();
         int nums = 0, len = A.length();
+        int lenA = 0, lenB = 0;
         for (int i = 0; i < len; i++) {
             if (A.charAt(i) == B.charAt(i) && A.charAt(i) == '-') nums++;
+            if (A.charAt(i) != '-') lenA++;
+            if (B.charAt(i) != '-') lenB++;
         }
-        int lenA = A.replaceAll("-", "").length();
-        int lenB = B.replaceAll("-", "").length();
+
         return Math.min(len - lenA - nums, len - lenB - nums);
     }
 }

@@ -12,11 +12,13 @@ public abstract class subStringAlign {
     protected String A, B, alignA, alignB;
     protected int thorehold;
     private float sim;
+    protected boolean state = false;
 
     /**
      * To get the aligned results.
      */
     public String[] getStrAlign() {
+        if (state) return new String[]{alignB, alignA};
         return new String[]{alignA, alignB};
     }
 
@@ -25,7 +27,6 @@ public abstract class subStringAlign {
      */
     public float getSimstrB(String B) {
         this.B = B.toLowerCase();
-        thorehold = this.B.length() / 100 > 1 ? this.B.length() / 100 : 15;
         this.selectCommonStrings();
         return this.sim;
     }
@@ -36,6 +37,15 @@ public abstract class subStringAlign {
     public void AlignStrB(String B) {
         this.B = B.toLowerCase();
         this.Align();
+    }
+
+    /**
+     * get substrings between A and B
+     * @param B
+     */
+    public int[][] getSubStrings(String B) {
+        this.B = B.toLowerCase();
+        return selectCommonStrings();
     }
 
     protected abstract List<Integer> selectprefix(String p);
@@ -77,7 +87,7 @@ public abstract class subStringAlign {
                 res.add(new int[]{IdxLen.get(i)[0], IdxLen.get(i)[1], locx.get(i).get(0)});
             }
         }
-        return res.toArray(int[][]::new);
+        return res.toArray(new int[res.size()][]);
     }
 
     private int getIdxMax (int[] p) {
@@ -115,6 +125,13 @@ public abstract class subStringAlign {
     }
 
     protected int[][] selectCommonStrings() {
+        if (A.length() >= B.length()) {
+            this.thorehold = Math.max(this.A.length() / 100, 15);
+        }
+        else {
+            this.thorehold = Math.max(this.B.length() / 100, 15);
+        }
+        
         int[][] results = findCommonStrings();
         if (results.length == 0) { return null; }
 
@@ -139,7 +156,6 @@ public abstract class subStringAlign {
     }
 
     protected void Align() {
-        thorehold = this.B.length() / 100 > 1 ? this.B.length() / 100 : 15;
         int[][] results = this.selectCommonStrings();
         if (results == null) {
             Kband alignKb = new Kband(this.A, this.B);

@@ -12,10 +12,6 @@ public abstract class kb {
 
     /**
      * judge the idx whether in the matrix
-     * @param i
-     * @param j
-     * @param k
-     * @param diff
      * @return boolean
      */
     protected boolean InsiderStrip(int i, int j, int k, int diff){
@@ -24,9 +20,6 @@ public abstract class kb {
 
     /**
      * init the dp matrix
-     * @param pm
-     * @param k
-     * @param diff
      */
     protected void Init(float[][][] pm, int k, int diff) {
         for (float[][] floats : pm) {
@@ -45,21 +38,14 @@ public abstract class kb {
 
     /**
      * choose one to trace back
-     * @param p0
-     * @param p1
-     * @param p2
      * @return 0/1/2
      */
     protected int ChooseMax(float p0, float p1, float p2) {
-        // return p1 >= p0 ? (p1 >= p2 ? 1 : 2) : (p0 >= p2 ? 0 : 2);
         return p0 >= p1 ? (p0 >= p2 ? 0 : 2) : (p1 >= p2 ? 1 : 2);
     }
 
     /**
      * compare the three float and return the max one
-     * @param p0
-     * @param p1
-     * @param p2
      */
     protected float Maxfloat3(float p0, float p1, float p2) {
         return Math.max(Math.max(p0, p1), p2);

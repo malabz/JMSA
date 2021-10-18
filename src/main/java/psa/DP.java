@@ -1,5 +1,7 @@
 package psa;
 
+import io.str;
+
 import java.util.Arrays;
 
 
@@ -83,8 +85,7 @@ public class DP {
                 i--;
             }
             else {
-                System.out.println("(DP) Trace Back is wrong!");
-                System.exit(0);
+                throw new IllegalStateException("channel = " + channel);
             }
         }
         alignA = alA.toString();
@@ -123,12 +124,12 @@ public class DP {
         // special instances
         if (m == 0 && n == 0) { return; }
         else if (m == 0) {
-            alignA = "-".repeat(n);
+            alignA = str.repeat("-", n);
             alignB = B;
             return;
         }
         else if (n == 0) {
-            alignB = "-".repeat(m);
+            alignB = str.repeat("-", m);
             alignA = A;
             return;
         }

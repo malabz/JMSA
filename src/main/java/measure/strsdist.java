@@ -2,9 +2,8 @@ package measure;
 
 
 public class strsdist {
-    private String[][] strings;
-    private String[] strs;
-    private String mode;
+    private final String[] strs;
+    private final String mode;
     public int idxc = -1;
     private double[][] dismatrix;
     private double[] dismatrix1D;
@@ -32,16 +31,6 @@ public class strsdist {
         this.strs = strs;
         this.mode = mode.toLowerCase();
         dismatrix = getDist2D();
-    }
-
-    /**
-     * 用于计算profile之间的距离
-     * @param strings
-     */
-    public strsdist (String[][] strings) {
-        this.strings = strings;
-        this.mode = "kmer";
-        dismatrix = getDistND();
     }
 
     /**
@@ -75,30 +64,21 @@ public class strsdist {
         else return null;
     }
 
-    private double[][] getDistND () {
-        kmer km = new kmer(strings);
-        return km.getDismatrixND();
-    }
-
     /**
      * 计算序列间两两之间的距离
      */
     private double[][] getDist2D () {
-        switch (mode) {
-            case "kmer" -> {
-                kmer ker = new kmer(strs);
-                return ker.getDismatrix();
-            }
-            case "lcs" -> {
-                lcs ls = new lcs(strs);
-                return ls.getDismatrix();
-            }
-            default -> {
-                System.out.println("(strsdist) mode is wrong");
-                System.exit(0);
-            }
-        }
-        return null;
+       if (mode.equals("kmer")) {
+           kmer ker = new kmer(strs, 6);
+           return ker.getDismatrix();
+       }
+       else if (mode.equals("lcs")) {
+           lcs ls = new lcs(strs);
+           return ls.getDismatrix();
+       }
+       else {
+           throw new IllegalArgumentException("unkown mode: " + mode);
+       }
     }
 
     /**
@@ -106,23 +86,17 @@ public class strsdist {
      */
     private double[] getDist1D () {
         switch (mode) {
-            case "kmer" -> {
-                kmer ker = new kmer(strs);
+            case "kmer":
+                kmer ker = new kmer(strs, 6);
                 return ker.getDismatrix1D(idxc);
-            }
-            case "lcs" -> {
+            case "lcs":
                 lcs ls = new lcs(strs);
                 return ls.getDismatrix1D(idxc);
-            }
-            case "star" -> {
+            case "star":
                 starDist sdist = new starDist(strs, false);
                 return sdist.getDismatrix1D(idxc);
-            }
-            default -> {
-                System.out.println("mode is wrong");
-                System.exit(0);
-            }
+            default:
+                throw new IllegalArgumentException("unkown mode: " + mode);
         }
-        return null;
     }
 }

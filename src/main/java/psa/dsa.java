@@ -32,11 +32,11 @@ public class dsa {
             this.mode = "kband";
         }
         switch (mode) {
-            case "kband" -> {
+            case "kband":
                 Kband kb = new Kband(A, B);
                 alignAB = kb.getStrAlign();
-            }
-            case "suffix" -> {
+                break;
+            case "suffix":
                 if (this.B.length() > this.A.length()) {
                     STAlign stAlign = new STAlign(B, A);
                     alignAB = new String[2];
@@ -46,8 +46,8 @@ public class dsa {
                     STAlign stAlign = new STAlign(A, B);
                     alignAB = stAlign.getStrAlign();
                 }
-            }
-            case "fmindex" -> {
+                break;
+            case "fmindex":
                 if (this.B.length() > this.A.length()) {
                     FMAlign fmAlign = new FMAlign(B, A);
                     alignAB = new String[2];
@@ -57,11 +57,9 @@ public class dsa {
                     FMAlign fmAlign = new FMAlign(A, B);
                     alignAB = fmAlign.getStrAlign();
                 }
-            }
-            default -> {
-                System.out.println("(dsa) mode is wrong!");
-                System.exit(0);
-            }
+                break;
+            default:
+                throw new IllegalArgumentException("unkown mode: " + mode);
         }
     }
 }

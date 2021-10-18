@@ -1,7 +1,8 @@
 package msa;
 
+import io.str;
 import psa.dsa;
-import measure.score;
+// import measure.score;
 import psa.FMAlign;
 import psa.STAlign;
 
@@ -13,7 +14,7 @@ public class centerAlign {
 
 
     /**
-     * 
+     *
      * @param strs
      * @param mode "kband" "suffix" "fmindex"
      */
@@ -44,25 +45,23 @@ public class centerAlign {
         this.strsaligned = AlignSilent(strs);
     }
 
-    public String[] getStrsAlign() {
-        return this.strsaligned;
-    }
+    public String[] getStrsAlign() { return this.strsaligned; }
 
     public int getLongestRow() { return maxcol; }
 
     private String[] Align(String[] strs) {
-        
+
         long startTime, endTime;
         startTime = System.currentTimeMillis();
         System.out.println("\nfind the center seq");
-        
+
         int maxcol = findMaxcol(strs);
         System.out.println("\n    No."+maxcol);
         System.out.println("\nAlign the center seq\n");
 
         String[][] resultsAlign = new String[num - 1][2];
         switch (this.mode) {
-            case "suffix" -> {
+            case "suffix":
                 STAlign stAlign = new STAlign(strs[maxcol]);
                 for (int i = 0; i < num - 1; i++) {
                     String outToScreen = "    " + (i + 1) + " / " + (num - 1);
@@ -70,22 +69,22 @@ public class centerAlign {
                     int j = i >= maxcol ? i + 1 : i;
                     stAlign.AlignStrB(strs[j]);
                     resultsAlign[i] = stAlign.getStrAlign();
-                    System.out.print("\b".repeat(outToScreen.length()));
+                    System.out.print(str.repeat("\b", outToScreen.length()));
                 }
                 System.out.println("    " + (num - 1) + " / " + (num - 1));
-            }
-            case "kband" -> {
+                break;
+            case "kband":
                 for (int i = 0; i < num - 1; i++) {
                     String outToScreen = "    " + (i + 1) + " / " + (num - 1);
                     System.out.print(outToScreen);
                     int j = i >= maxcol ? i + 1 : i;
                     dsa dalign = new dsa(strs[maxcol], strs[j], "kband");
                     resultsAlign[i] = dalign.getStrAlign();
-                    System.out.print("\b".repeat(outToScreen.length()));
+                    System.out.print(str.repeat("\b", outToScreen.length()));
                 }
                 System.out.println("    " + (num - 1) + " / " + (num - 1));
-            }
-            case "fmindex" -> {
+                break;
+            case "fmindex":
                 FMAlign fmAlign = new FMAlign(strs[maxcol]);
                 for (int i = 0; i < num - 1; i++) {
                     String outToScreen = "    " + (i + 1) + " / " + (num - 1);
@@ -93,16 +92,14 @@ public class centerAlign {
                     int j = i >= maxcol ? i + 1 : i;
                     fmAlign.AlignStrB(strs[j]);
                     resultsAlign[i] = fmAlign.getStrAlign();
-                    System.out.print("\b".repeat(outToScreen.length()));
+                    System.out.print(str.repeat("\b", outToScreen.length()));
                 }
                 System.out.println("    " + (num - 1) + " / " + (num - 1));
-            }
-            default -> {
-                System.out.println("(centeralign) mode is wrong");
-                System.exit(0);
-            }
+                break;
+            default:
+                throw new IllegalArgumentException("unkown mode: " + mode);
         }
-        
+
         String centerSeq = strs[maxcol];
 
         // mark the gaps in center seq
@@ -147,54 +144,49 @@ public class centerAlign {
             else {
                 newStrsaligned[idxinsert++] = insertGap(mark, str2[1]);
             }
-            System.out.print("\b".repeat(outToScreen.length()));
+            System.out.print(str.repeat("\b", outToScreen.length()));
         }
 
         endTime = System.currentTimeMillis();
         System.out.println("    " + (num - 1) + " / " + (num - 1) + "\n");
         System.out.println("time: "+((endTime-startTime)/1000)+"s\n");
-        score sc = new score();
-        System.out.println(" sps: " + String.format("%.3f", sc.sps(newStrsaligned)));
-        System.out.println("  tc: " + String.format("%.3f", sc.tc(newStrsaligned)));
-
-        // TODO 
-        // new reAlign(newStrsaligned);
-
+        // System.out.println(" sps: " + String.format("%.3f", score.sps(newStrsaligned)));
+        // System.out.println("  tc: " + String.format("%.3f", score.tc(newStrsaligned)));
+        // System.out.println("  tc: " + String.format("%.3f", score.tcStrict(newStrsaligned)));
         return newStrsaligned;
     }
 
     private String[] AlignSilent(String[] strs) {
-        
+
         maxcol = findMaxcol(strs);
         String[][] resultsAlign = new String[num - 1][2];
         switch (this.mode) {
-            case "suffix" -> {
+            case "suffix" :
                 STAlign stAlign = new STAlign(strs[maxcol]);
                 for (int i = 0; i < num - 1; i++) {
                     int j = i >= maxcol ? i + 1 : i;
                     stAlign.AlignStrB(strs[j]);
                     resultsAlign[i] = stAlign.getStrAlign();
                 }
-            }
-            case "kband" -> {
+                break;
+            case "kband" :
                 for (int i = 0; i < num - 1; i++) {
                     int j = i >= maxcol ? i + 1 : i;
                     dsa dalign = new dsa(strs[maxcol], strs[j], "kband");
                     resultsAlign[i] = dalign.getStrAlign();
                 }
-            }
-            case "fmindex" -> {
+                break;
+            case "fmindex" :
                 FMAlign fmAlign = new FMAlign(strs[maxcol]);
                 for (int i = 0; i < num - 1; i++) {
                     int j = i >= maxcol ? i + 1 : i;
                     fmAlign.AlignStrB(strs[j]);
                     resultsAlign[i] = fmAlign.getStrAlign();
                 }
-            }
-            default -> {
+                break;
+            default :
                 System.out.println("(centeralign) mode is wrong");
                 System.exit(0);
-            }
         }
         String centerSeq = strs[maxcol];
 
@@ -246,7 +238,7 @@ public class centerAlign {
         StringBuilder seqGap = new StringBuilder();
         int len = mark.length;
         for (int i = 0; i < len; i++) {
-            seqGap.append("-".repeat(mark[i]));
+            seqGap.append(str.repeat("-", mark[i]));
             if (i < len - 1) seqGap.append(seq.charAt(i));
         }
         return seqGap.toString();

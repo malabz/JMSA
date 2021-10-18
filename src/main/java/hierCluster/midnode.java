@@ -2,7 +2,7 @@ package hierCluster;
 
 public class midnode extends node {
     private final node a, b;
-    private int number;
+    private final int number;
 
     public midnode (node a, node b, int num) {
         this.a = a;
@@ -16,8 +16,6 @@ public class midnode extends node {
 
     public String toString() {
         return "(" + a + ":" + a.getLen() + ", " + b + ":" + b.getLen() + ")";
-        // return "(" + a + ", " + b  + ")";
-
     }
 
     @Override

@@ -20,7 +20,7 @@ class IntIdx implements Comparable<IntIdx> {
 
     public int compareTo(IntIdx I){
         if (num1 != I.num1) return Integer.compare(num1, I.num1);
-            return Integer.compare(num2, I.num2);
+        return Integer.compare(num2, I.num2);
     }
 
     public boolean equals(IntIdx I) {

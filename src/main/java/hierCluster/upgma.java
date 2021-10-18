@@ -5,33 +5,10 @@ import java.util.List;
 
 public class upgma {
     private double[][] dmatrix;
-    // private String[] names;
     public List<int[]> TreeList;
     private node[] nodes;
     private int[] nums;
     private int n, global_n;
-
-    /**
-     * 
-     * @param matrix
-     * @param names
-     */
-    public upgma(double[][] matrix, String[] names) {
-        this.dmatrix = matrix;
-        // this.names = names;
-        this.n = names.length;
-        this.nums = new int[this.n];
-        for (int i = 0; i < n; i++) {
-            nums[i] = 1;
-        }
-        this.nodes = new node[n];
-        for (int i = 0; i < n; i++) {
-            node temp = new leafnode(names[i], i);
-            this.nodes[i] = temp;
-        }
-        this.global_n = this.n;
-        this.TreeList = new ArrayList<>();
-    }
 
     public upgma(double[][] matrix) {
         this.dmatrix = matrix;
@@ -56,8 +33,7 @@ public class upgma {
      */
     public void genTree() {
         if (this.n < 2) {
-            System.out.println("The number of types is smaller than 2!");
-            return;
+            throw new IllegalArgumentException("The number of strings is smaller than 2!");
         }
         while (this.n > 2) {    
             // find the minimum value and its idx
@@ -82,7 +58,6 @@ public class upgma {
             this.nodes[idxi].setLen(minimum/2 - this.nodes[idxi].getDistance());
             this.nodes[idxj].setLen(minimum/2 - this.nodes[idxj].getDistance());
             int[] treelist = {this.nodes[idxi].getNum(), this.nodes[idxj].getNum(), this.global_n - 1};
-            // System.out.println(treelist[0]+", "+treelist[1]+", "+treelist[2]);
 
             this.TreeList.add(treelist.clone());
 
